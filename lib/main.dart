@@ -10,11 +10,13 @@ class KeyPad {
   String label;
   bool? isOperator;
   bool? isEqualsBtn;
+  bool? isClearBtn;
 
   KeyPad({
     required this.label,
     this.isOperator,
     this.isEqualsBtn,
+    this.isClearBtn,
   });
 }
 
@@ -26,17 +28,37 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String inputValue = "10+2";
+  String inputValue = "";
+  String answer = "";
 
-  dynamic calcInput() {
-    double res = double.parse(buildParser().parse(inputValue).value.toString());
-    print(res);
-    return res;
+  String calcInput() {
+    print("inputValue: $inputValue");
+    final result = buildParser().parse(inputValue);
+    if (result.isSuccess) {
+      print(result.value);
+      setState(() {
+        answer = result.value.toString();
+      });
+      return result.value.toString();
+    } else {
+      setState(() {
+        answer = "Syntax Error";
+      });
+    }
+    print("Syntax Error $result");
+    return "Syntax Error";
   }
 
   void handleInput(String label) {
     setState(() {
       inputValue += label;
+    });
+  }
+
+  void clearScreen() {
+    setState(() {
+      inputValue = "";
+      answer = "";
     });
   }
 
@@ -57,6 +79,7 @@ class _HomePageState extends State<HomePage> {
     KeyPad(label: "."),
     KeyPad(label: "=", isEqualsBtn: true),
     KeyPad(label: "/", isOperator: true),
+    KeyPad(label: "CLEAR", isClearBtn: true),
   ];
 
   @override
@@ -64,41 +87,50 @@ class _HomePageState extends State<HomePage> {
     return MaterialApp(
       home: Scaffold(
         backgroundColor: AppColors().backgroundColor,
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 64.0),
-            child: Center(
-              child: Column(
-                children: [
-                  Text(
-                    inputValue,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w400,
-                    ),
+        body: Center(
+          child: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                SizedBox(height: 20),
+                Text(
+                  answer,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w400,
                   ),
-                  Text("0"),
-                  Text("0"),
-                  Spacer(),
-                  Expanded(
-                    child: Wrap(
-                      spacing: 15,
-                      runSpacing: 15,
-                      alignment: WrapAlignment.center,
-                      runAlignment: WrapAlignment.center,
-                      children: keysPadList
-                          .map((keypad) => KeypadWidget(
-                                keypad: keypad,
-                                onPressed: () => keypad.isEqualsBtn == true
-                                    ? calcInput()
-                                    : handleInput(keypad.label),
-                              ))
-                          .toList(),
-                    ),
-                  )
-                ],
-              ),
+                ),
+                Text("0"),
+                Text(
+                  inputValue,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+                ),
+                Spacer(),
+                Expanded(
+                  child: Wrap(
+                    spacing: 15,
+                    runSpacing: 15,
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: keysPadList
+                        .map((keypad) => KeypadWidget(
+                              keypad: keypad,
+                              onPressed: () => keypad.isEqualsBtn == true
+                                  ? calcInput()
+                                  : keypad.isClearBtn == true
+                                      ? clearScreen()
+                                      : handleInput(keypad.label),
+                            ))
+                        .toList(),
+                  ),
+                ),
+                SizedBox(height: 40),
+              ],
             ),
           ),
         ),
@@ -124,12 +156,16 @@ class KeypadWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       style: TextButton.styleFrom(
-        padding: EdgeInsets.all(20),
+        padding: keypad.isClearBtn == true
+            ? EdgeInsets.symmetric(horizontal: 60, vertical: 20)
+            : EdgeInsets.all(20),
         backgroundColor: keypad.isEqualsBtn == true
             ? Colors.cyan
-            : keypad.isOperator == true
-                ? Colors.blue
-                : AppColors().keyColor,
+            : keypad.isClearBtn == true
+                ? Colors.amber
+                : keypad.isOperator == true
+                    ? Colors.blue
+                    : AppColors().keyColor,
         shape: keypad.isOperator == true
             ? CircleBorder()
             : RoundedRectangleBorder(
