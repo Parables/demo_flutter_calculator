@@ -1,22 +1,28 @@
 import 'package:calculator/pasrser.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:unicons/unicons.dart';
 
 void main() {
   runApp(HomePage());
 }
 
 class KeyPad {
-  String label;
+  String? label;
   bool? isOperator;
   bool? isEqualsBtn;
   bool? isClearBtn;
+  bool? isBackspaceBtn;
+  Icon? icon;
 
   KeyPad({
-    required this.label,
+    this.label,
     this.isOperator,
     this.isEqualsBtn,
     this.isClearBtn,
+    this.isBackspaceBtn,
+    this.icon,
   });
 }
 
@@ -49,9 +55,35 @@ class _HomePageState extends State<HomePage> {
     return "Syntax Error";
   }
 
-  void handleInput(String label) {
+  bool endsWithOperator() {
+    return inputValue.endsWith("+") ||
+        inputValue.endsWith("-") ||
+        inputValue.endsWith("*") ||
+        inputValue.endsWith("x") ||
+        inputValue.endsWith("/") ||
+        inputValue.endsWith("%");
+  }
+
+  void handleInput(String label, {bool? isOperator}) {
     setState(() {
-      inputValue += label;
+      if (isOperator == true && endsWithOperator())
+        inputValue = inputValue.substring(0, inputValue.length - 1);
+      else if (label == ".") {
+        if (inputValue.isEmpty)
+          inputValue = "0.";
+        else if (inputValue.contains("."))
+          return;
+        else
+          inputValue += label;
+      } else
+        inputValue += label;
+    });
+  }
+
+  void backspace() {
+    setState(() {
+      if (inputValue.isNotEmpty)
+        inputValue = inputValue.substring(0, inputValue.length - 1);
     });
   }
 
@@ -77,9 +109,15 @@ class _HomePageState extends State<HomePage> {
     KeyPad(label: "x", isOperator: true),
     KeyPad(label: "0"),
     KeyPad(label: "."),
-    KeyPad(label: "=", isEqualsBtn: true),
+    KeyPad(
+        icon: Icon(
+          Icons.backspace,
+          color: Colors.white,
+        ),
+        isBackspaceBtn: true),
     KeyPad(label: "/", isOperator: true),
-    KeyPad(label: "CLEAR", isClearBtn: true),
+    KeyPad(label: "CE", isClearBtn: true),
+    KeyPad(label: "=", isEqualsBtn: true),
   ];
 
   @override
@@ -87,30 +125,132 @@ class _HomePageState extends State<HomePage> {
     return MaterialApp(
       home: Scaffold(
         backgroundColor: AppColors().backgroundColor,
-        body: Center(
-          child: SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                SizedBox(height: 20),
-                Text(
-                  answer,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w400,
-                  ),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          actions: [
+            Icon(
+              Icons.history,
+              color: Colors.white,
+            ),
+            SizedBox(width: 20),
+          ],
+        ),
+        drawer: Container(
+          color: Colors.black.withOpacity(0.8),
+          width: 300,
+          child: ListView(
+            children: [
+              DrawerHeader(child: Container()),
+              ListTile(
+                leading: Icon(UniconsLine.sigma, color: Colors.white),
+                title: Text(
+                  "Scientific Calculator",
+                  style: TextStyle(color: Colors.white),
                 ),
-                Text("0"),
-                Text(
-                  inputValue,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
+                trailing: Icon(UniconsLine.angle_right, color: Colors.white),
+              ),
+              ListTile(
+                leading: Icon(UniconsLine.dollar_alt, color: Colors.white),
+                title: Text(
+                  "Currency Converter",
+                  style: TextStyle(color: Colors.white),
                 ),
-                Spacer(),
-                Expanded(
+                trailing: Icon(UniconsLine.angle_right, color: Colors.white),
+              ),
+              ListTile(
+                leading: Icon(UniconsLine.weight, color: Colors.white),
+                title: Text(
+                  "BMI Calculator",
+                  style: TextStyle(color: Colors.white),
+                ),
+                trailing: Icon(UniconsLine.angle_right, color: Colors.white),
+              ),
+              Stack(
+                children: [
+                  Container(
+                    height: 200,
+                    margin: EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 100,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(15.0),
+                      child: Center(
+                        child: RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: "Upgrade to Premium",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              TextSpan(
+                                text:
+                                    "\n\nSolve algebra, quadratic equations, trignometry, calculus and many more... ",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                      top: 40,
+                      right: 0,
+                      child: SvgPicture.asset(
+                        "assets/icons/premium.svg",
+                        width: 100,
+                      ))
+                ],
+              )
+            ],
+          ),
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 30,
+                right: 40,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      answer,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      inputValue,
+                      style: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                bottom: 20,
+                left: 0,
+                right: 0,
+                child: Container(
+                  width: double.infinity,
                   child: Wrap(
                     spacing: 15,
                     runSpacing: 15,
@@ -124,14 +264,16 @@ class _HomePageState extends State<HomePage> {
                                   ? calcInput()
                                   : keypad.isClearBtn == true
                                       ? clearScreen()
-                                      : handleInput(keypad.label),
+                                      : keypad.isBackspaceBtn == true
+                                          ? backspace()
+                                          : handleInput(keypad.label ?? "",
+                                              isOperator: keypad.isOperator),
                             ))
                         .toList(),
                   ),
                 ),
-                SizedBox(height: 40),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         /*    bottomSheet: BottomSheet(
@@ -156,8 +298,8 @@ class KeypadWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextButton(
       style: TextButton.styleFrom(
-        padding: keypad.isClearBtn == true
-            ? EdgeInsets.symmetric(horizontal: 60, vertical: 20)
+        padding: keypad.isEqualsBtn == true
+            ? EdgeInsets.symmetric(horizontal: 105, vertical: 20)
             : EdgeInsets.all(20),
         backgroundColor: keypad.isEqualsBtn == true
             ? Colors.cyan
@@ -173,12 +315,14 @@ class KeypadWidget extends StatelessWidget {
               ),
       ),
       onPressed: onPressed,
-      child: Text(
-        keypad.label,
-        style: TextStyle(
-          color: Colors.white,
-        ),
-      ),
+      child: keypad.icon != null
+          ? keypad.icon!
+          : Text(
+              keypad.label ?? "",
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
     );
   }
 }
